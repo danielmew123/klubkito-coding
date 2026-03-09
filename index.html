@@ -312,25 +312,26 @@
       <div class="form-group">
         <label class="form-label">Code</label>
         <div style="display:flex;gap:0;border:2px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px">
-          <button id="tab-path" onclick="switchCodeTab('path')" style="flex:1;padding:9px;font-size:13px;font-weight:700;border:none;background:var(--purple);color:#fff;cursor:pointer;transition:all .15s">&#x1F4C2; File Path</button>
+          <button id="tab-path" onclick="switchCodeTab('path')" style="flex:1;padding:9px;font-size:13px;font-weight:700;border:none;background:var(--purple);color:#fff;cursor:pointer;transition:all .15s">&#x1F4C2; Upload Files</button>
           <button id="tab-paste" onclick="switchCodeTab('paste')" style="flex:1;padding:9px;font-size:13px;font-weight:700;border:none;background:#f8fafc;color:var(--muted);cursor:pointer;transition:all .15s">&#x1F4CB; Paste Code</button>
         </div>
 
-        <!-- PATH TAB -->
+        <!-- UPLOAD TAB -->
         <div id="codetab-path">
           <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#1e40af;line-height:1.6">
-            In IntelliJ: right-click your <strong>file or project folder</strong> → <strong>Copy Path / Reference</strong> → <strong>Absolute Path</strong>, paste it below and hit Load. If you paste a folder, you'll see a list of files to pick from.
+            Select one file <strong>or your whole project folder</strong>. In IntelliJ, find your project in Finder and drag the folder here, or click to browse.
           </div>
-          <div style="display:flex;gap:8px">
-            <input class="form-input" id="f-path" type="text" placeholder="/Users/you/IdeaProjects/MyApp  or  …/Main.java" style="flex:1;font-family:monospace;font-size:12.5px" onkeydown="if(event.key==='Enter')loadFile()" />
-            <button class="btn-sm btn-purple" id="loadFileBtn" onclick="loadFile()" style="flex-shrink:0;white-space:nowrap">Load</button>
+          <input type="file" id="fileUploadInput" multiple accept=".java,.kt,.py,.js,.ts,.go,.rs,.cpp,.c,.cs,.scala,.rb,.swift" style="display:none" onchange="handleFileUpload(this.files)" />
+          <div id="uploadDropZone" onclick="document.getElementById('fileUploadInput').click()"
+            style="border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .15s;background:#fafbff"
+            ondragover="event.preventDefault();this.style.borderColor='var(--purple)';this.style.background='#f3f0ff'"
+            ondragleave="this.style.borderColor='';this.style.background='#fafbff'"
+            ondrop="event.preventDefault();this.style.borderColor='';this.style.background='#fafbff';handleFileUpload(event.dataTransfer.files)">
+            <div style="font-size:28px;margin-bottom:6px">&#x1F4C2;</div>
+            <div style="font-weight:700;color:var(--text);margin-bottom:3px">Click or drag files here</div>
+            <div style="font-size:12px;color:var(--muted)">Select multiple .kt / .java / .py files at once</div>
           </div>
-          <div class="form-error" id="f-path-err" style="margin-top:5px"></div>
-          <!-- File picker shown when a folder path is entered -->
-          <div id="filePicker" style="display:none;margin-top:8px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
-            <div style="padding:8px 12px;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted)">SELECT A FILE</div>
-            <div id="filePickerList" style="max-height:200px;overflow-y:auto"></div>
-          </div>
+          <div class="form-error" id="f-path-err" style="margin-top:6px"></div>
         </div>
 
         <!-- PASTE TAB -->
@@ -631,66 +632,37 @@ function openShareModal() {
   document.getElementById('shareOverlay').classList.add('open');
 }
 
-async function loadFile() {
-  const filePath = document.getElementById('f-path').value.trim();
-  const errEl    = document.getElementById('f-path-err');
-  const btn      = document.getElementById('loadFileBtn');
+function handleFileUpload(fileList) {
+  const errEl = document.getElementById('f-path-err');
   errEl.textContent = '';
   errEl.style.color = '';
-  document.getElementById('filePicker').style.display = 'none';
-  if (!filePath) { errEl.textContent = 'Please enter a file or folder path.'; return; }
-  btn.textContent = 'Loading…'; btn.disabled = true;
+  if (!fileList || fileList.length === 0) return;
+  const allowed = ['.java','.kt','.py','.js','.ts','.go','.rs','.cpp','.c','.cs','.scala','.rb','.swift'];
+  const files = Array.from(fileList).filter(f => allowed.includes('.' + f.name.split('.').pop().toLowerCase()));
+  if (files.length === 0) { errEl.textContent = 'No supported source files found.'; return; }
 
-  // Check if it looks like a folder (no file extension)
-  const hasExt = /\.[a-zA-Z0-9]+$/.test(filePath.split('/').pop());
-  if (!hasExt) {
-    try {
-      const data = await api('POST', '/readdir', { path: filePath });
-      if (data.error) { errEl.textContent = data.error; btn.textContent = 'Load'; btn.disabled = false; return; }
-      applyLoadedFile({ code: data.code, filename: data.filename });
-      errEl.style.color = 'var(--green)';
-      errEl.textContent = `✓ Loaded ${data.fileCount} file${data.fileCount === 1 ? '' : 's'} from project`;
-    } catch(e) { errEl.textContent = `Error: ${e.message}`; }
-    btn.textContent = 'Load'; btn.disabled = false;
-    return;
-  }
+  const readers = files.map(f => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = e => resolve({ name: f.name, code: e.target.result });
+    r.onerror = reject;
+    r.readAsText(f);
+  }));
 
-  try {
-    const data = await api('POST', '/readfile', { path: filePath });
-    if (data.error) { errEl.textContent = data.error; btn.textContent = 'Load'; btn.disabled = false; return; }
-    applyLoadedFile(data);
-  } catch(e) {
-    errEl.textContent = `Error: ${e.message}. Try the "Paste Code" tab instead.`;
-  }
-  btn.textContent = 'Load'; btn.disabled = false;
-}
-
-function showFilePicker(files, baseDir) {
-  const picker = document.getElementById('filePicker');
-  const list   = document.getElementById('filePickerList');
-  list.innerHTML = '';
-  files.forEach(fp => {
-    const rel  = fp.startsWith(baseDir) ? fp.slice(baseDir.length).replace(/^\//, '') : fp;
-    const item = document.createElement('div');
-    item.style.cssText = 'padding:9px 14px;font-size:12.5px;font-family:monospace;cursor:pointer;border-bottom:1px solid #f1f5f9;color:var(--text);transition:background .1s';
-    item.textContent = rel;
-    item.onmouseover = () => item.style.background = '#f8fafc';
-    item.onmouseout  = () => item.style.background = '';
-    item.onclick = async () => {
-      document.getElementById('f-path').value = fp;
-      picker.style.display = 'none';
-      const btn = document.getElementById('loadFileBtn');
-      btn.textContent = 'Loading…'; btn.disabled = true;
-      try {
-        const data = await api('POST', '/readfile', { path: fp });
-        if (data.error) { document.getElementById('f-path-err').textContent = data.error; }
-        else applyLoadedFile(data);
-      } catch(e) { document.getElementById('f-path-err').textContent = `Error: ${e.message}`; }
-      btn.textContent = 'Load'; btn.disabled = false;
-    };
-    list.appendChild(item);
-  });
-  picker.style.display = '';
+  Promise.all(readers).then(results => {
+    let code, filename;
+    if (results.length === 1) {
+      code = results[0].code;
+      filename = results[0].name;
+    } else {
+      code = results.map(f => `// ===== ${f.name} =====\n${f.code}`).join('\n\n');
+      filename = results[0].name.replace(/\.[^.]+$/, '') + '_project';
+    }
+    applyLoadedFile({ code, filename });
+    errEl.style.color = 'var(--green)';
+    errEl.textContent = `✓ Loaded ${results.length} file${results.length === 1 ? '' : 's'}`;
+    // Update drop zone text
+    document.getElementById('uploadDropZone').innerHTML = `<div style="font-size:22px;margin-bottom:4px">✅</div><div style="font-weight:700;color:var(--green)">${results.length} file${results.length===1?'':'s'} loaded</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Click to change</div>`;
+  }).catch(() => { errEl.textContent = 'Could not read files.'; });
 }
 
 function applyLoadedFile(data) {
