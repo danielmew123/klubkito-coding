@@ -1,0 +1,12 @@
+{
+  "name": "klubkito-ai",
+  "version": "1.0.0",
+  "description": "Klub Kito Coding - IntelliJ project sharing platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

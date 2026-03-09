@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Klub Kito Coding</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange:#f97316; --purple:#7c3aed; --blue:#3b82f6; --green:#16a34a;
+      --bg:#f4f6fb; --white:#fff; --border:#e2e8f0;
+      --text:#1e293b; --muted:#64748b; --nav:#1e1b4b;
+    }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    /* NAV */
+    nav { height:58px; background:var(--nav); display:flex; align-items:center; padding:0 20px; gap:12px; position:sticky; top:0; z-index:200; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+    .brand { display:flex; align-items:center; gap:9px; cursor:pointer; flex-shrink:0; }
+    .brand img { height:38px; width:38px; object-fit:contain; }
+    .brand-name { font-size:14px; font-weight:800; color:#fff; display:block; }
+    .brand-sub  { font-size:9px; font-weight:600; color:#a5b4fc; letter-spacing:1.5px; text-transform:uppercase; display:block; }
+    .nav-links { display:flex; gap:2px; margin-left:8px; }
+    .nav-link { padding:7px 13px; border-radius:8px; font-size:13.5px; font-weight:600; color:#c7d2fe; background:none; border:none; cursor:pointer; transition:all .15s; }
+    .nav-link:hover, .nav-link.active { background:rgba(255,255,255,.12); color:#fff; }
+    .nav-search { flex:1; max-width:300px; margin-left:auto; position:relative; }
+    .nav-search input { width:100%; padding:8px 14px 8px 33px; border-radius:20px; border:none; background:rgba(255,255,255,.12); color:#fff; font-size:13px; outline:none; }
+    .nav-search input::placeholder { color:#a5b4fc; }
+    .nav-search input:focus { background:rgba(255,255,255,.2); }
+    .nav-si { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#a5b4fc; font-size:14px; pointer-events:none; }
+    .nav-right { display:flex; align-items:center; gap:8px; }
+    .btn-sm { padding:7px 15px; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer; border:none; transition:all .15s; }
+    .btn-ghost  { background:rgba(255,255,255,.1); color:#fff; } .btn-ghost:hover  { background:rgba(255,255,255,.2); }
+    .btn-orange { background:var(--orange); color:#fff; }        .btn-orange:hover { background:#ea6d05; }
+    .btn-purple { background:var(--purple); color:#fff; }        .btn-purple:hover { background:#6d28d9; }
+
+    /* AVATAR */
+    .avatar-sm { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,var(--purple),var(--blue)); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; cursor:pointer; flex-shrink:0; user-select:none; }
+    .profile-menu { position:relative; display:flex; align-items:center; gap:8px; }
+    .profile-dropdown { display:none; position:absolute; right:0; top:38px; background:#fff; border-radius:12px; border:1px solid var(--border); box-shadow:0 8px 24px rgba(0,0,0,.12); min-width:160px; overflow:hidden; z-index:300; }
+    .profile-dropdown.open { display:block; }
+    .pd-label { padding:10px 16px 4px; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+    .pd-item  { padding:10px 16px; font-size:13.5px; font-weight:600; cursor:pointer; color:var(--text); transition:background .12s; }
+    .pd-item:hover { background:#f8fafc; }
+    .pd-item.danger { color:#ef4444; }
+
+    /* HERO */
+    .hero { background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%); padding:44px 32px; text-align:center; color:#fff; }
+    .hero h1 { font-size:28px; font-weight:800; margin-bottom:8px; }
+    .hero p  { font-size:15px; color:#c7d2fe; max-width:480px; margin:0 auto 20px; }
+    .hero-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .hero-btn { padding:10px 24px; border-radius:20px; font-size:14px; font-weight:700; cursor:pointer; border:none; transition:transform .1s, opacity .15s; }
+    .hero-btn:hover { transform:scale(1.04); opacity:.9; }
+    .hero-btn.primary   { background:var(--orange); color:#fff; }
+    .hero-btn.secondary { background:rgba(255,255,255,.15); color:#fff; border:2px solid rgba(255,255,255,.3); }
+
+    /* LAYOUT */
+    .page { max-width:1120px; margin:0 auto; padding:28px 20px; }
+    .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .section-title  { font-size:18px; font-weight:800; }
+    .see-all { font-size:13px; color:var(--purple); font-weight:600; cursor:pointer; } .see-all:hover { text-decoration:underline; }
+
+    /* CATS */
+    .cats { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; }
+    .cat-pill { padding:7px 16px; border-radius:999px; font-size:13px; font-weight:600; border:2px solid transparent; cursor:pointer; transition:all .15s; background:#fff; }
+    .cat-pill:hover, .cat-pill.active { transform:scale(1.04); }
+
+    /* GRID */
+    .project-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; margin-bottom:36px; }
+    .project-card { background:#fff; border-radius:14px; overflow:hidden; border:1px solid var(--border); cursor:pointer; transition:transform .15s, box-shadow .15s; }
+    .project-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.1); }
+    .project-thumb { width:100%; aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; font-size:52px; position:relative; }
+    .lang-badge { position:absolute; top:8px; right:8px; font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:rgba(0,0,0,.45); color:#fff; }
+    .project-info   { padding:10px 12px 12px; }
+    .project-title  { font-size:13.5px; font-weight:700; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .project-author { font-size:12px; color:var(--muted); margin-bottom:8px; }
+    .project-stats  { display:flex; gap:10px; font-size:11.5px; color:var(--muted); }
+
+    /* OVERLAY */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(15,10,40,.65); z-index:500; align-items:center; justify-content:center; padding:20px; }
+    .overlay.open { display:flex; }
+
+    /* MODAL */
+    .modal { background:#fff; border-radius:20px; width:100%; max-width:460px; max-height:90vh; overflow-y:auto; box-shadow:0 24px 60px rgba(0,0,0,.3); animation:popIn .2s ease; }
+    .modal.wide { max-width:560px; }
+    .modal.detail-modal { max-width:700px; }
+    @keyframes popIn { from { transform:scale(.92); opacity:0; } to { transform:scale(1); opacity:1; } }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px 0; margin-bottom:18px; }
+    .modal-title  { font-size:18px; font-weight:800; }
+    .modal-close  { width:32px; height:32px; border-radius:50%; border:none; background:#f1f5f9; color:var(--muted); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .modal-close:hover { background:#e2e8f0; }
+    .modal-body { padding:0 24px 24px; }
+
+    /* FORM */
+    .form-group  { margin-bottom:15px; }
+    .form-label  { display:block; font-size:13px; font-weight:700; margin-bottom:5px; }
+    .form-input, .form-textarea, .form-select { width:100%; padding:10px 14px; border:2px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; color:var(--text); background:#f8fafc; outline:none; transition:border-color .15s; }
+    .form-input:focus, .form-textarea:focus, .form-select:focus { border-color:var(--purple); background:#fff; }
+    .form-textarea { resize:vertical; min-height:80px; }
+    .form-hint  { font-size:12px; color:var(--muted); margin-top:4px; }
+    .form-error { font-size:12px; color:#ef4444; margin-top:4px; min-height:16px; }
+
+    /* AUTH TABS */
+    .auth-tabs { display:flex; border-bottom:2px solid var(--border); margin-bottom:18px; }
+    .auth-tab { flex:1; padding:10px; text-align:center; font-size:14px; font-weight:700; cursor:pointer; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px; transition:all .15s; }
+    .auth-tab.active { color:var(--purple); border-bottom-color:var(--purple); }
+    .auth-form { display:none; } .auth-form.active { display:block; }
+    .auth-submit { width:100%; padding:12px; background:linear-gradient(135deg,var(--purple),var(--blue)); color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; margin-top:4px; transition:opacity .15s; }
+    .auth-submit:hover { opacity:.9; }
+
+    /* THUMB PICKER */
+    .thumb-picker { display:flex; gap:8px; flex-wrap:wrap; }
+    .thumb-opt { width:50px; height:42px; border-radius:8px; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer; transition:border-color .12s, transform .1s; }
+    .thumb-opt:hover, .thumb-opt.selected { border-color:var(--purple); transform:scale(1.08); }
+    .submit-btn { width:100%; padding:13px; background:linear-gradient(135deg,var(--purple),var(--blue)); color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; margin-top:8px; transition:opacity .15s; }
+    .submit-btn:hover { opacity:.9; }
+    .submit-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* DETAIL */
+    .detail-thumb   { width:100%; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; font-size:80px; border-radius:20px 20px 0 0; }
+    .detail-body    { padding:20px 24px 28px; }
+    .detail-title   { font-size:22px; font-weight:800; margin-bottom:4px; }
+    .detail-meta    { font-size:13px; color:var(--muted); margin-bottom:14px; }
+    .detail-desc    { font-size:14px; line-height:1.65; margin-bottom:18px; }
+    .detail-tags    { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+    .tag            { padding:4px 12px; border-radius:999px; font-size:12px; font-weight:600; background:#ede9fe; color:var(--purple); }
+    .detail-actions { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:0; }
+    .action-btn { display:flex; align-items:center; gap:6px; padding:9px 18px; border-radius:20px; border:2px solid var(--border); background:#fff; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .12s; color:var(--text); }
+    .action-btn:hover { border-color:var(--purple); color:var(--purple); }
+    .action-btn.liked { border-color:#ef4444; color:#ef4444; background:#fff5f5; }
+    .action-btn.primary { background:var(--purple); border-color:var(--purple); color:#fff; }
+    .action-btn.primary:hover { background:#6d28d9; }
+    .action-btn.danger  { border-color:#fee2e2; color:#ef4444; }
+    .action-btn.danger:hover { background:#fef2f2; }
+
+    /* CODE + TERMINAL */
+    .code-header { margin-top:18px; font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; margin-bottom:6px; }
+    .code-preview  { background:#0f172a; border-radius:12px; padding:16px; overflow-x:auto; }
+    .code-preview pre { font-family:'Fira Code',Consolas,monospace; font-size:13px; color:#e2e8f0; line-height:1.6; }
+    .terminal-wrap { margin-top:16px; border-radius:12px; overflow:hidden; border:1px solid #334155; }
+    .terminal-bar  { background:#1e293b; padding:8px 14px; display:flex; align-items:center; gap:10px; font-size:12px; color:#94a3b8; font-family:monospace; }
+    .dot { width:11px; height:11px; border-radius:50%; } .dot.r{background:#ef4444;} .dot.y{background:#f59e0b;} .dot.g{background:#22c55e;}
+    .terminal-output { background:#020817; padding:14px 16px; min-height:80px; max-height:260px; overflow-y:auto; font-family:'Fira Code',Consolas,monospace; font-size:13px; color:#e2e8f0; line-height:1.65; white-space:pre-wrap; word-break:break-word; }
+    .t-err{color:#f87171;} .t-ok{color:#86efac;} .t-dim{color:#475569;} .t-info{color:#7dd3fc;}
+    .run-btn { display:flex; align-items:center; gap:7px; padding:9px 20px; border-radius:20px; border:none; background:#16a34a; color:#fff; font-size:14px; font-weight:700; cursor:pointer; transition:background .15s, transform .1s; }
+    .run-btn:hover { background:#15803d; transform:scale(1.03); }
+    .run-btn:disabled { background:#475569; cursor:not-allowed; transform:none; }
+    .run-btn .spinner { width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; display:none; }
+    .run-btn.running .spinner { display:block; } .run-btn.running .play-icon { display:none; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* TOAST */
+    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(80px); background:#1e1b4b; color:#fff; padding:12px 22px; border-radius:12px; font-size:14px; font-weight:600; z-index:999; transition:transform .3s ease; box-shadow:0 8px 24px rgba(0,0,0,.2); white-space:nowrap; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+
+    .empty-state { text-align:center; padding:60px 20px; color:var(--muted); font-size:15px; }
+    .empty-state .big { font-size:48px; margin-bottom:12px; }
+
+    ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="brand" onclick="showPage('home')">
+    <img src="logo.png" alt="Klub Kito" />
+    <div><span class="brand-name">Klub Kito</span><span class="brand-sub">Coding</span></div>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active" id="nav-home"    onclick="showPage('home')">Home</button>
+    <button class="nav-link"        id="nav-explore" onclick="showPage('explore')">Explore</button>
+    <button class="nav-link"        id="nav-mine"    onclick="showPage('mine')">My Projects</button>
+  </div>
+  <div class="nav-search">
+    <span class="nav-si">&#x1F50D;</span>
+    <input type="text" id="searchInput" placeholder="Search projects…" oninput="doSearch()" />
+  </div>
+  <div class="nav-right" id="navRight"></div>
+</nav>
+
+<!-- HOME -->
+<div id="page-home">
+  <div class="hero">
+    <h1>Share Your IntelliJ Projects</h1>
+    <p>Post your Java, Kotlin, Python and more — let others explore and run your code.</p>
+    <div class="hero-btns">
+      <button class="hero-btn primary"   onclick="requireLogin(openShareModal)">+ Share a Project</button>
+      <button class="hero-btn secondary" onclick="showPage('explore')">Explore Projects</button>
+    </div>
+  </div>
+  <div class="page">
+    <div class="cats" id="catPills"></div>
+    <div class="section-header">
+      <div class="section-title">&#x1F525; Featured</div>
+      <span class="see-all" onclick="showPage('explore')">See all</span>
+    </div>
+    <div class="project-grid" id="featuredGrid"></div>
+    <div class="section-header">
+      <div class="section-title">&#x1F550; Recently Shared</div>
+      <span class="see-all" onclick="showPage('explore')">See all</span>
+    </div>
+    <div class="project-grid" id="recentGrid"></div>
+  </div>
+</div>
+
+<!-- EXPLORE -->
+<div id="page-explore" style="display:none">
+  <div class="page">
+    <div class="section-header"><div class="section-title">&#x1F9ED; All Projects</div></div>
+    <div class="cats" id="exploreFilters"></div>
+    <div class="project-grid" id="exploreGrid"></div>
+  </div>
+</div>
+
+<!-- MY PROJECTS -->
+<div id="page-mine" style="display:none">
+  <div class="page">
+    <div class="section-header">
+      <div class="section-title">&#x1F4C1; My Projects</div>
+      <button class="btn-sm btn-orange" onclick="requireLogin(openShareModal)">+ Share Project</button>
+    </div>
+    <div class="project-grid" id="mineGrid"></div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="overlay" id="authOverlay" onclick="outsideClose(event,'authOverlay',closeAuth)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Welcome to Klub Kito</div>
+      <button class="modal-close" onclick="closeAuth()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-signin"   onclick="switchTab('signin')">Sign In</div>
+        <div class="auth-tab"        id="tab-register" onclick="switchTab('register')">Register</div>
+      </div>
+      <!-- SIGN IN -->
+      <div class="auth-form active" id="form-signin">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" id="si-user" type="text" placeholder="Your username" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="si-pass" type="password" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doSignIn()" />
+          <div class="form-error" id="si-err"></div>
+        </div>
+        <button class="auth-submit" onclick="doSignIn()">Sign In</button>
+      </div>
+      <!-- REGISTER -->
+      <div class="auth-form" id="form-register">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" id="reg-user" type="text" placeholder="e.g. coolcoder99" autocomplete="username" />
+          <div class="form-error" id="reg-user-err"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Display Name</label>
+          <input class="form-input" id="reg-display" type="text" placeholder="How you appear on projects" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="reg-pass" type="password" placeholder="At least 4 characters" autocomplete="new-password" />
+          <div class="form-error" id="reg-pass-err"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <input class="form-input" id="reg-pass2" type="password" placeholder="Repeat password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()" />
+          <div class="form-error" id="reg-pass2-err"></div>
+        </div>
+        <button class="auth-submit" onclick="doRegister()">Create Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="overlay" id="shareOverlay" onclick="outsideClose(event,'shareOverlay',closeShareModal)">
+  <div class="modal wide">
+    <div class="modal-header">
+      <div class="modal-title">&#x1F4E4; Share from IntelliJ</div>
+      <button class="modal-close" onclick="closeShareModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Project Name</label>
+        <input class="form-input" id="f-name" type="text" placeholder="e.g. MyAwesomeApp" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-textarea" id="f-desc" placeholder="What does your project do?"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Language</label>
+        <select class="form-select" id="f-lang">
+          <option>Java</option><option>Kotlin</option><option>Python</option>
+          <option>JavaScript</option><option>TypeScript</option><option>C++</option>
+          <option>C#</option><option>Go</option><option>Rust</option>
+          <option>Scala</option><option>Spring Boot</option><option>Android</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="f-cat">
+          <option>Game</option><option>Web App</option><option>Mobile App</option>
+          <option>Algorithm</option><option>Tool / Utility</option>
+          <option>API / Backend</option><option>Data Science</option><option>Other</option>
+        </select>
+      </div>
+      <!-- CODE SOURCE TABS -->
+      <div class="form-group">
+        <label class="form-label">Code</label>
+        <div style="display:flex;gap:0;border:2px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px">
+          <button id="tab-path" onclick="switchCodeTab('path')" style="flex:1;padding:9px;font-size:13px;font-weight:700;border:none;background:var(--purple);color:#fff;cursor:pointer;transition:all .15s">&#x1F4C2; File Path</button>
+          <button id="tab-paste" onclick="switchCodeTab('paste')" style="flex:1;padding:9px;font-size:13px;font-weight:700;border:none;background:#f8fafc;color:var(--muted);cursor:pointer;transition:all .15s">&#x1F4CB; Paste Code</button>
+        </div>
+
+        <!-- PATH TAB -->
+        <div id="codetab-path">
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#1e40af;line-height:1.6">
+            In IntelliJ: right-click your <strong>file or project folder</strong> → <strong>Copy Path / Reference</strong> → <strong>Absolute Path</strong>, paste it below and hit Load. If you paste a folder, you'll see a list of files to pick from.
+          </div>
+          <div style="display:flex;gap:8px">
+            <input class="form-input" id="f-path" type="text" placeholder="/Users/you/IdeaProjects/MyApp  or  …/Main.java" style="flex:1;font-family:monospace;font-size:12.5px" onkeydown="if(event.key==='Enter')loadFile()" />
+            <button class="btn-sm btn-purple" id="loadFileBtn" onclick="loadFile()" style="flex-shrink:0;white-space:nowrap">Load</button>
+          </div>
+          <div class="form-error" id="f-path-err" style="margin-top:5px"></div>
+          <!-- File picker shown when a folder path is entered -->
+          <div id="filePicker" style="display:none;margin-top:8px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+            <div style="padding:8px 12px;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--muted)">SELECT A FILE</div>
+            <div id="filePickerList" style="max-height:200px;overflow-y:auto"></div>
+          </div>
+        </div>
+
+        <!-- PASTE TAB -->
+        <div id="codetab-paste" style="display:none">
+          <textarea class="form-textarea" id="f-paste" placeholder="Paste your code here…" style="font-family:monospace;font-size:12.5px;min-height:150px" oninput="onPasteInput()"></textarea>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px" id="pasteLineCount"></div>
+        </div>
+
+        <!-- PREVIEW (shared) -->
+        <div id="filePreviewWrap" style="display:none;margin-top:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.4px" id="filePreviewName"></span>
+            <span style="font-size:12px;color:var(--green);font-weight:700">&#x2713; Ready</span>
+          </div>
+          <div class="code-preview" style="max-height:160px;overflow-y:auto">
+            <pre id="filePreviewCode" style="font-family:monospace;font-size:12px;color:#e2e8f0;line-height:1.55;white-space:pre-wrap;word-break:break-word"></pre>
+          </div>
+          <div style="margin-top:5px;font-size:12px;color:var(--muted)" id="fileLineCount"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Thumbnail Icon</label>
+        <div class="thumb-picker" id="thumbPicker"></div>
+      </div>
+      <div class="form-error" id="share-err" style="margin-bottom:8px"></div>
+      <button class="submit-btn" id="shareSubmitBtn" onclick="submitProject()">Share Project &#x1F680;</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detailOverlay" onclick="outsideClose(event,'detailOverlay',closeDetail)">
+  <div class="modal detail-modal" id="detailModal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API    = window.location.origin;
+const ICONS  = ['☕','🐍','⚡','🎮','🌐','📱','🤖','🔧','🧮','🗄️','🎯','🛸','🌿','🔮','🏗️','📊','🦀','🟨','🔵','🟢'];
+const LANG_COLORS = {
+  Java:['#ff6b35','#fff3ee'], Kotlin:['#7c3aed','#f3eeff'], Python:['#3b82f6','#eff6ff'],
+  JavaScript:['#d97706','#fffbeb'], TypeScript:['#2563eb','#eff6ff'], 'C++':['#0891b2','#ecfeff'],
+  'C#':['#7c3aed','#f3eeff'], Go:['#0891b2','#ecfeff'], Rust:['#b45309','#fffbeb'],
+  Scala:['#dc2626','#fef2f2'], 'Spring Boot':['#16a34a','#f0fdf4'], Android:['#16a34a','#f0fdf4'],
+};
+const CATS = ['All','Game','Web App','Mobile App','Algorithm','Tool / Utility','API / Backend','Data Science','Other'];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let token       = localStorage.getItem('kkToken') || null;
+let me          = JSON.parse(localStorage.getItem('kkMe') || 'null');
+let allProjects = [];
+let activeFilter= 'All';
+let activePage  = 'home';
+let afterLogin  = null;
+let selectedIcon= ICONS[0];
+let viewedIds   = new Set(JSON.parse(localStorage.getItem('kkViewed') || '[]'));
+
+function saveSession() {
+  if (token) { localStorage.setItem('kkToken', token); localStorage.setItem('kkMe', JSON.stringify(me)); }
+  else { localStorage.removeItem('kkToken'); localStorage.removeItem('kkMe'); }
+  localStorage.setItem('kkViewed', JSON.stringify([...viewedIds]));
+}
+
+// ── API CALLS ─────────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type':'application/json', 'bypass-tunnel-reminder':'true' } };
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  if (body)  opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  const text = await r.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    console.error('Non-JSON from server:', text.slice(0, 300));
+    throw new Error(text.slice(0, 120));
+  }
+}
+
+async function loadProjects() {
+  try { allProjects = await api('GET', '/projects'); }
+  catch { allProjects = []; }
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function renderNav() {
+  const el = document.getElementById('navRight');
+  if (me) {
+    const initials = me.display.slice(0,2).toUpperCase();
+    el.innerHTML = `
+      <div class="profile-menu" id="profileMenu">
+        <span style="color:#c7d2fe;font-size:13px;font-weight:600">${esc(me.display)}</span>
+        <div class="avatar-sm" onclick="toggleMenu()">${initials}</div>
+        <div class="profile-dropdown" id="pdMenu">
+          <div class="pd-label">${esc(me.username)}</div>
+          <div class="pd-item" onclick="showPage('mine');toggleMenu(false)">My Projects</div>
+          <div class="pd-item danger" onclick="signOut()">Sign Out</div>
+        </div>
+      </div>
+      <button class="btn-sm btn-orange" onclick="requireLogin(openShareModal)">+ Share</button>`;
+  } else {
+    el.innerHTML = `
+      <button class="btn-sm btn-ghost"  onclick="openAuth('signin')">Sign In</button>
+      <button class="btn-sm btn-orange" onclick="openAuth('register')">Register</button>`;
+  }
+}
+
+function toggleMenu(force) {
+  const d = document.getElementById('pdMenu');
+  if (d) d.classList.toggle('open', force !== false ? undefined : false);
+}
+document.addEventListener('click', e => {
+  const pm = document.getElementById('profileMenu');
+  if (pm && !pm.contains(e.target)) { const d = document.getElementById('pdMenu'); if(d) d.classList.remove('open'); }
+});
+
+// ── PAGES ─────────────────────────────────────────────────────────────────────
+async function showPage(name) {
+  await loadProjects();
+  ['home','explore','mine'].forEach(p => {
+    document.getElementById('page-'+p).style.display = p===name ? '' : 'none';
+    document.getElementById('nav-'+p).classList.toggle('active', p===name);
+  });
+  activePage = name;
+  if (name==='home')    renderHome();
+  if (name==='explore') renderExplore();
+  if (name==='mine')    renderMine();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function timeAgo(iso) {
+  if (!iso) return 'Just now';
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60)    return 'Just now';
+  if (s < 3600)  return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+function cardHTML(p) {
+  const [,bg] = LANG_COLORS[p.lang] || ['#64748b','#f1f5f9'];
+  return `<div class="project-card" onclick="openDetail(${p.id})">
+    <div class="project-thumb" style="background:${bg}">
+      <span>${p.icon||'💻'}</span>
+      <span class="lang-badge">${esc(p.lang)}</span>
+    </div>
+    <div class="project-info">
+      <div class="project-title">${esc(p.name)}</div>
+      <div class="project-author">by ${esc(p.author)}</div>
+      <div class="project-stats">
+        <span>&#x2764; ${p.likes}</span>
+        <span>&#x1F441; ${p.views}</span>
+        <span>${timeAgo(p.createdAt)}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function catPillsHTML(containerId, page) {
+  const el = document.getElementById(containerId); if (!el) return;
+  el.innerHTML = CATS.map(c => {
+    const [fg,bg] = c==='All' ? ['#7c3aed','#ede9fe'] : (LANG_COLORS[c]||['#64748b','#f1f5f9']);
+    const active = c===activeFilter ? 'active' : '';
+    return `<div class="cat-pill ${active}" style="${active?`background:${bg};`:''}border-color:${fg};color:${fg}" onclick="filterCat('${c}','${page}')">${c}</div>`;
+  }).join('');
+}
+
+function emptyHTML(msg) { return `<div class="empty-state"><div class="big">&#x1F4E4;</div><p>${msg}</p></div>`; }
+
+function renderHome() {
+  catPillsHTML('catPills','home');
+  const list = activeFilter==='All' ? allProjects : allProjects.filter(p=>p.cat===activeFilter);
+  const featured = list.slice(0, 4);
+  const recent   = [...list].slice(0, 8);
+  document.getElementById('featuredGrid').innerHTML = featured.length ? featured.map(cardHTML).join('') : emptyHTML('No projects yet — be the first to share one!');
+  document.getElementById('recentGrid').innerHTML   = recent.length   ? recent.map(cardHTML).join('')   : '';
+}
+function renderExplore() {
+  catPillsHTML('exploreFilters','explore');
+  const q    = document.getElementById('searchInput').value.toLowerCase();
+  const list = activeFilter==='All' ? allProjects : allProjects.filter(p=>p.cat===activeFilter);
+  const res  = q ? list.filter(p=>p.name.toLowerCase().includes(q)||p.desc.toLowerCase().includes(q)||p.lang.toLowerCase().includes(q)) : list;
+  document.getElementById('exploreGrid').innerHTML = res.length ? res.map(cardHTML).join('') : emptyHTML('No projects found.');
+}
+function renderMine() {
+  if (!me) { document.getElementById('mineGrid').innerHTML = emptyHTML('Sign in to see your projects.'); return; }
+  const mine = allProjects.filter(p => p.authorUsername === me.username);
+  document.getElementById('mineGrid').innerHTML = mine.length ? mine.map(cardHTML).join('') : emptyHTML("You haven't shared any projects yet.");
+}
+function filterCat(c, page) { activeFilter = c; if(page==='explore') renderExplore(); else renderHome(); }
+function doSearch() { if (activePage==='explore') renderExplore(); }
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function requireLogin(fn) { if (me) { fn(); return; } afterLogin = fn; openAuth('signin'); }
+
+function openAuth(tab) {
+  switchTab(tab);
+  ['si-user','si-pass','reg-user','reg-display','reg-pass','reg-pass2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['si-err','reg-user-err','reg-pass-err','reg-pass2-err'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});
+  document.getElementById('authOverlay').classList.add('open');
+}
+function closeAuth() { document.getElementById('authOverlay').classList.remove('open'); afterLogin=null; }
+function switchTab(t) {
+  ['signin','register'].forEach(x=>{
+    document.getElementById('tab-'+x).classList.toggle('active', x===t);
+    document.getElementById('form-'+x).classList.toggle('active', x===t);
+  });
+}
+
+async function doSignIn() {
+  const username = document.getElementById('si-user').value.trim();
+  const password = document.getElementById('si-pass').value;
+  const errEl    = document.getElementById('si-err');
+  errEl.textContent = '';
+  if (!username || !password) { errEl.textContent = 'Please fill in all fields.'; return; }
+  try {
+    const data = await api('POST', '/auth/login', { username, password });
+    if (data.error) { errEl.textContent = data.error; return; }
+    token = data.token; me = { username: data.username, display: data.display };
+    saveSession(); closeAuth(); renderNav();
+    showToast('Welcome back, ' + data.display + '!');
+    if (afterLogin) { const fn = afterLogin; afterLogin=null; fn(); }
+  } catch { errEl.textContent = 'Could not connect to server.'; }
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-user').value.trim();
+  const display  = document.getElementById('reg-display').value.trim();
+  const password = document.getElementById('reg-pass').value;
+  const confirm  = document.getElementById('reg-pass2').value;
+  ['reg-user-err','reg-pass-err','reg-pass2-err'].forEach(id=>document.getElementById(id).textContent='');
+  let ok = true;
+  if (!username) { document.getElementById('reg-user-err').textContent='Username is required.'; ok=false; }
+  if (password.length < 4) { document.getElementById('reg-pass-err').textContent='At least 4 characters.'; ok=false; }
+  if (password !== confirm) { document.getElementById('reg-pass2-err').textContent='Passwords do not match.'; ok=false; }
+  if (!ok) return;
+  try {
+    const data = await api('POST', '/auth/register', { username, display: display||username, password });
+    if (data.error) { document.getElementById('reg-user-err').textContent = data.error; return; }
+    token = data.token; me = { username: data.username, display: data.display };
+    saveSession(); closeAuth(); renderNav();
+    showToast('Account created! Welcome, ' + data.display + '!');
+    if (afterLogin) { const fn = afterLogin; afterLogin=null; fn(); }
+  } catch { document.getElementById('reg-user-err').textContent = 'Could not connect to server.'; }
+}
+
+async function signOut() {
+  await api('POST', '/auth/logout', {}).catch(()=>{});
+  token = null; me = null; saveSession(); renderNav();
+  showPage('home'); showToast('Signed out.');
+}
+
+// ── SHARE ─────────────────────────────────────────────────────────────────────
+let loadedCode = '';
+let activeCodeTab = 'path';
+
+function switchCodeTab(tab) {
+  activeCodeTab = tab;
+  document.getElementById('codetab-path').style.display  = tab==='path'  ? '' : 'none';
+  document.getElementById('codetab-paste').style.display = tab==='paste' ? '' : 'none';
+  document.getElementById('tab-path').style.background   = tab==='path'  ? 'var(--purple)' : '#f8fafc';
+  document.getElementById('tab-path').style.color        = tab==='path'  ? '#fff' : 'var(--muted)';
+  document.getElementById('tab-paste').style.background  = tab==='paste' ? 'var(--purple)' : '#f8fafc';
+  document.getElementById('tab-paste').style.color       = tab==='paste' ? '#fff' : 'var(--muted)';
+  // clear preview when switching tabs
+  loadedCode = '';
+  document.getElementById('filePreviewWrap').style.display = 'none';
+}
+
+function onPasteInput() {
+  const val = document.getElementById('f-paste').value;
+  loadedCode = val;
+  const lines = val.split('\n').length;
+  document.getElementById('pasteLineCount').textContent = val ? lines + ' lines' : '';
+  if (val) {
+    document.getElementById('filePreviewName').textContent = 'Pasted code';
+    document.getElementById('filePreviewCode').textContent = val;
+    document.getElementById('fileLineCount').textContent = lines + ' lines';
+    document.getElementById('filePreviewWrap').style.display = '';
+  } else {
+    document.getElementById('filePreviewWrap').style.display = 'none';
+  }
+}
+
+function openShareModal() {
+  document.getElementById('thumbPicker').innerHTML = ICONS.map(ic =>
+    `<div class="thumb-opt${ic===selectedIcon?' selected':''}" onclick="pickIcon(this,'${ic}')">${ic}</div>`
+  ).join('');
+  ['f-name','f-desc','f-path','f-paste'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('share-err').textContent='';
+  document.getElementById('f-path-err').textContent='';
+  document.getElementById('filePreviewWrap').style.display='none';
+  document.getElementById('filePreviewCode').textContent='';
+  document.getElementById('pasteLineCount').textContent='';
+  loadedCode = '';
+  switchCodeTab('path');
+  document.getElementById('shareOverlay').classList.add('open');
+}
+
+async function loadFile() {
+  const filePath = document.getElementById('f-path').value.trim();
+  const errEl    = document.getElementById('f-path-err');
+  const btn      = document.getElementById('loadFileBtn');
+  errEl.textContent = '';
+  errEl.style.color = '';
+  document.getElementById('filePicker').style.display = 'none';
+  if (!filePath) { errEl.textContent = 'Please enter a file or folder path.'; return; }
+  btn.textContent = 'Loading…'; btn.disabled = true;
+
+  // Check if it looks like a folder (no file extension)
+  const hasExt = /\.[a-zA-Z0-9]+$/.test(filePath.split('/').pop());
+  if (!hasExt) {
+    try {
+      const data = await api('POST', '/readdir', { path: filePath });
+      if (data.error) { errEl.textContent = data.error; btn.textContent = 'Load'; btn.disabled = false; return; }
+      applyLoadedFile({ code: data.code, filename: data.filename });
+      errEl.style.color = 'var(--green)';
+      errEl.textContent = `✓ Loaded ${data.fileCount} file${data.fileCount === 1 ? '' : 's'} from project`;
+    } catch(e) { errEl.textContent = `Error: ${e.message}`; }
+    btn.textContent = 'Load'; btn.disabled = false;
+    return;
+  }
+
+  try {
+    const data = await api('POST', '/readfile', { path: filePath });
+    if (data.error) { errEl.textContent = data.error; btn.textContent = 'Load'; btn.disabled = false; return; }
+    applyLoadedFile(data);
+  } catch(e) {
+    errEl.textContent = `Error: ${e.message}. Try the "Paste Code" tab instead.`;
+  }
+  btn.textContent = 'Load'; btn.disabled = false;
+}
+
+function showFilePicker(files, baseDir) {
+  const picker = document.getElementById('filePicker');
+  const list   = document.getElementById('filePickerList');
+  list.innerHTML = '';
+  files.forEach(fp => {
+    const rel  = fp.startsWith(baseDir) ? fp.slice(baseDir.length).replace(/^\//, '') : fp;
+    const item = document.createElement('div');
+    item.style.cssText = 'padding:9px 14px;font-size:12.5px;font-family:monospace;cursor:pointer;border-bottom:1px solid #f1f5f9;color:var(--text);transition:background .1s';
+    item.textContent = rel;
+    item.onmouseover = () => item.style.background = '#f8fafc';
+    item.onmouseout  = () => item.style.background = '';
+    item.onclick = async () => {
+      document.getElementById('f-path').value = fp;
+      picker.style.display = 'none';
+      const btn = document.getElementById('loadFileBtn');
+      btn.textContent = 'Loading…'; btn.disabled = true;
+      try {
+        const data = await api('POST', '/readfile', { path: fp });
+        if (data.error) { document.getElementById('f-path-err').textContent = data.error; }
+        else applyLoadedFile(data);
+      } catch(e) { document.getElementById('f-path-err').textContent = `Error: ${e.message}`; }
+      btn.textContent = 'Load'; btn.disabled = false;
+    };
+    list.appendChild(item);
+  });
+  picker.style.display = '';
+}
+
+function applyLoadedFile(data) {
+  loadedCode = data.code;
+  document.getElementById('filePreviewName').textContent = data.filename;
+  document.getElementById('filePreviewCode').textContent = data.code;
+  const lines = data.code.split('\n').length;
+  document.getElementById('fileLineCount').textContent = lines + ' lines loaded';
+  document.getElementById('filePreviewWrap').style.display = '';
+  if (!document.getElementById('f-name').value)
+    document.getElementById('f-name').value = data.filename.replace(/\.[^.]+$/, '');
+  const extMap = {'.java':'Java','.kt':'Kotlin','.py':'Python','.js':'JavaScript','.ts':'TypeScript','.go':'Go','.rs':'Rust','.cpp':'C++','.cs':'C#','.scala':'Scala'};
+  const ext = data.filename.includes('.') ? '.'+data.filename.split('.').pop().toLowerCase() : '';
+  const lang = extMap[ext];
+  if (lang) {
+    const sel = document.getElementById('f-lang');
+    for (let i=0;i<sel.options.length;i++) if (sel.options[i].value===lang) { sel.selectedIndex=i; break; }
+  }
+}
+function closeShareModal() { document.getElementById('shareOverlay').classList.remove('open'); }
+function pickIcon(el,ic) { selectedIcon=ic; document.querySelectorAll('.thumb-opt').forEach(o=>o.classList.remove('selected')); el.classList.add('selected'); }
+
+async function submitProject() {
+  const name  = document.getElementById('f-name').value.trim();
+  const desc  = document.getElementById('f-desc').value.trim();
+  const lang  = document.getElementById('f-lang').value;
+  const cat   = document.getElementById('f-cat').value;
+  const errEl = document.getElementById('share-err');
+  const btn   = document.getElementById('shareSubmitBtn');
+  errEl.textContent = '';
+  if (!name) { errEl.textContent = 'Please enter a project name.'; return; }
+  if (!desc) { errEl.textContent = 'Please add a description.'; return; }
+  if (!loadedCode) { errEl.textContent = activeCodeTab==='path' ? 'Please enter a file path and click Load.' : 'Please paste your code.'; return; }
+  const code = loadedCode;
+  btn.disabled = true; btn.textContent = 'Sharing…';
+  try {
+    const data = await api('POST', '/projects', { name, desc, lang, cat, code, icon: selectedIcon });
+    if (data.error) { errEl.textContent = data.error; return; }
+    closeShareModal();
+    showToast('Project shared!');
+    await showPage('mine');
+  } catch { errEl.textContent = 'Could not connect to server.'; }
+  finally { btn.disabled=false; btn.textContent='Share Project 🚀'; }
+}
+
+// ── DETAIL ────────────────────────────────────────────────────────────────────
+async function openDetail(id) {
+  const p = allProjects.find(x=>x.id===id); if (!p) return;
+  // Increment view once per browser session
+  if (!viewedIds.has(id)) { viewedIds.add(id); saveSession(); p.views++; api('POST','/projects/view',{id}).catch(()=>{}); }
+  const [,bg] = LANG_COLORS[p.lang] || ['#64748b','#f1f5f9'];
+  const isOwn  = me && me.username === p.authorUsername;
+  const liked  = me && p.likedBy && p.likedBy.includes(me.username);
+  document.getElementById('detailModal').innerHTML = `
+    <div class="detail-thumb" style="background:${bg}">${p.icon||'💻'}</div>
+    <div class="detail-body">
+      <div class="detail-title">${esc(p.name)}</div>
+      <div class="detail-meta">by <strong>${esc(p.author)}</strong> &bull; ${timeAgo(p.createdAt)} &bull; &#x1F441; ${p.views} views</div>
+      <div class="detail-tags"><span class="tag">${esc(p.lang)}</span><span class="tag">${esc(p.cat)}</span></div>
+      <div class="detail-desc">${esc(p.desc)}</div>
+      <div class="detail-actions">
+        ${p.code ? `<button class="run-btn" id="runBtn-${p.id}" onclick="runProject(${p.id})"><span class="play-icon">&#x25B6; Run</span><div class="spinner"></div></button>` : ''}
+        <button class="action-btn ${liked?'liked':''}" id="likeBtn-${p.id}" onclick="likeProject(${p.id})">&#x2764; ${liked?'Liked':'Like'} (${p.likes})</button>
+        ${p.code ? `<button class="action-btn" onclick="copyCode(${p.id})">&#x1F4CB; Copy Code</button>` : ''}
+        ${isOwn  ? `<button class="action-btn danger" onclick="deleteProject(${p.id})">&#x1F5D1; Delete</button>` : ''}
+        <button class="action-btn" onclick="closeDetail()">Close</button>
+      </div>
+      ${p.code ? `
+      <div class="terminal-wrap" id="termWrap-${p.id}" style="display:none">
+        <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>Output</span></div>
+        <div class="terminal-output" id="termOut-${p.id}"><span class="t-dim">Press &#x25B6; Run to execute on your computer…</span></div>
+      </div>
+      <div class="code-header">Code Snippet</div>
+      <div class="code-preview"><pre id="codeSnippet-${p.id}">${esc(p.code)}</pre></div>` : ''}
+    </div>`;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailOverlay').classList.remove('open');
+  if (activePage==='home')    renderHome();
+  if (activePage==='explore') renderExplore();
+  if (activePage==='mine')    renderMine();
+}
+
+async function likeProject(id) {
+  if (!me) { requireLogin(()=>likeProject(id)); return; }
+  const p = allProjects.find(x=>x.id===id); if (!p) return;
+  try {
+    const data = await api('POST', '/projects/like', { id });
+    p.likes = data.likes;
+    if (data.liked) { if (!p.likedBy) p.likedBy=[]; p.likedBy.push(me.username); }
+    else { p.likedBy = (p.likedBy||[]).filter(u=>u!==me.username); }
+    const btn = document.getElementById('likeBtn-'+id);
+    if (btn) { btn.innerHTML = `&#x2764; ${data.liked?'Liked':'Like'} (${data.likes})`; btn.className = 'action-btn'+(data.liked?' liked':''); }
+  } catch { showToast('Could not like — is the server running?'); }
+}
+
+async function deleteProject(id) {
+  if (!confirm('Delete this project? This cannot be undone.')) return;
+  try {
+    const data = await api('POST', '/projects/delete', { id });
+    if (data.error) { showToast(data.error); return; }
+    allProjects = allProjects.filter(x=>x.id!==id);
+    closeDetail(); showToast('Project deleted.');
+  } catch { showToast('Could not delete.'); }
+}
+
+function copyCode(id) {
+  const el = document.getElementById('codeSnippet-'+id);
+  if (el) navigator.clipboard.writeText(el.textContent).then(()=>showToast('Code copied!'));
+}
+
+// ── RUN ───────────────────────────────────────────────────────────────────────
+async function runProject(id) {
+  const p = allProjects.find(x=>x.id===id); if (!p||!p.code) return;
+  const btn  = document.getElementById('runBtn-'+id);
+  const wrap = document.getElementById('termWrap-'+id);
+  const out  = document.getElementById('termOut-'+id);
+  wrap.style.display=''; btn.classList.add('running'); btn.disabled=true;
+  out.innerHTML = `<span class="t-info">&#x25B6; Running ${esc(p.name)} (${esc(p.lang)})…</span>\n`;
+  wrap.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  try {
+    const data = await api('POST', '/run', { code: p.code, lang: p.lang });
+    let html = '';
+    if (data.stdout) html += `<span class="t-ok">${esc(data.stdout)}</span>`;
+    if (data.stderr) html += `<span class="t-err">${esc(data.stderr)}</span>`;
+    if (!data.stdout && !data.stderr) html += `<span class="t-dim">(no output)</span>`;
+    html += `\n<span class="${data.exitCode===0?'t-ok':'t-err'}">— exited with code ${data.exitCode}</span>`;
+    out.innerHTML = html;
+  } catch(e) {
+    out.innerHTML = `<span class="t-err">Could not connect to server.\nRun: node server.js\n\n${esc(e.message)}</span>`;
+  }
+  btn.classList.remove('running'); btn.disabled=false;
+  out.scrollTop = out.scrollHeight;
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function outsideClose(e, id, fn) { if (e.target.id===id) fn(); }
+let toastT;
+function showToast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderNav();
+showPage('home');
+</script>
+</body>
+</html>

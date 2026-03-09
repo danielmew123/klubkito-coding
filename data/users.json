@@ -1,0 +1,17 @@
+[
+  {
+    "username": "daniel",
+    "display": "Dani",
+    "passwordHash": "01e6e97dfd23246564367436ea0410fb9f923b222b0820094f36da9209a8f49c"
+  },
+  {
+    "username": "dani",
+    "display": "Dani",
+    "passwordHash": "01e6e97dfd23246564367436ea0410fb9f923b222b0820094f36da9209a8f49c"
+  },
+  {
+    "username": "test",
+    "display": "Test",
+    "passwordHash": "380801f5a99c155e8b504e6d9fbe5d47f2738232d3cad0a4f3566226c4da9392"
+  }
+]
