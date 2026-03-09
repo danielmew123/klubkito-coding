@@ -6,12 +6,14 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 
 const PORT     = process.env.PORT || 4321;
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+const DATA_DIR  = process.env.DATA_DIR || path.join(__dirname, 'data');
+const BIN_DIR   = path.join(DATA_DIR, 'binaries');
 const FILES = {
   projects: path.join(DATA_DIR, 'projects.json'),
   users:    path.join(DATA_DIR, 'users.json'),
   sessions: path.join(DATA_DIR, 'sessions.json'),
 };
+fs.mkdirSync(BIN_DIR, { recursive: true });
 
 // ── DISK HELPERS ──────────────────────────────────────────────────────────────
 function readJSON(file, fallback) {
@@ -205,6 +207,32 @@ route('POST', '/projects/delete', (req, res, body, token) => {
   projects.splice(idx, 1);
   persist();
   send(res, 200, { ok: true });
+});
+
+// Upload binary (base64) for a project
+route('POST', '/projects/upload-binary', (req, res, body, token) => {
+  const user = getUser(token);
+  if (!user) return send(res, 401, { error: 'Not logged in.' });
+  const p = projects.find(x => x.id === body.id && x.authorUsername === user.username);
+  if (!p) return send(res, 403, { error: 'Not found or not yours.' });
+  if (!body.data || !body.filename) return send(res, 400, { error: 'Missing data or filename.' });
+  const allowed = ['.jar','.zip','.exe','.dmg','.apk'];
+  const ext = path.extname(body.filename).toLowerCase();
+  if (!allowed.includes(ext)) return send(res, 400, { error: 'Only .jar, .zip, .exe, .dmg, .apk allowed.' });
+  const buf = Buffer.from(body.data, 'base64');
+  if (buf.length > 150 * 1024 * 1024) return send(res, 400, { error: 'File too large (max 150MB).' });
+  const filename = p.id + ext;
+  fs.writeFileSync(path.join(BIN_DIR, filename), buf);
+  p.binary = filename;
+  p.binaryName = body.filename;
+  persist();
+  send(res, 200, { ok: true });
+});
+
+// Download binary
+const server2 = http; // placeholder reference
+route('GET', '/download', (req, res) => {
+  // handled below in raw server
 });
 
 // Run code
@@ -401,7 +429,25 @@ const server = http.createServer((req, res) => {
   }
 
   // Static files
-  const isApiRoute = ['/auth','/projects','/run','/readfile'].some(p => req.url.startsWith(p));
+  // Binary download
+  if (req.method === 'GET' && req.url.startsWith('/download/')) {
+    const id = parseInt(req.url.split('/')[2]);
+    const p = projects.find(x => x.id === id);
+    if (!p || !p.binary) { res.writeHead(404); res.end('Not found'); return; }
+    const filePath = path.join(BIN_DIR, p.binary);
+    fs.readFile(filePath, (err, data) => {
+      if (err) { res.writeHead(404); res.end('File not found'); return; }
+      res.writeHead(200, {
+        'Content-Type': 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${p.binaryName}"`,
+        'Access-Control-Allow-Origin': '*',
+      });
+      res.end(data);
+    });
+    return;
+  }
+
+  const isApiRoute = ['/auth','/projects','/run','/readfile','/listfiles','/readdir','/download'].some(p => req.url.startsWith(p));
   if (req.method === 'GET' && !isApiRoute) {
     const safe = req.url.split('?')[0].replace(/\.\./g, '');
     const filePath = path.join(__dirname, safe === '/' ? 'index.html' : safe);

@@ -356,6 +356,16 @@
         <label class="form-label">Thumbnail Icon</label>
         <div class="thumb-picker" id="thumbPicker"></div>
       </div>
+      <!-- Optional: upload runnable app -->
+      <div style="margin-bottom:14px">
+        <label class="form-label">Runnable App <span style="font-weight:400;color:var(--muted)">(optional — .jar, .zip, .exe, .dmg)</span></label>
+        <input type="file" id="binaryUploadInput" accept=".jar,.zip,.exe,.dmg,.apk" style="display:none" onchange="onBinarySelected(this)" />
+        <div id="binaryDropZone" onclick="document.getElementById('binaryUploadInput').click()"
+          style="border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;background:#fafbff;font-size:13px;color:var(--muted)">
+          &#x1F4E6; Upload built .jar / .zip so others can download &amp; run it
+        </div>
+      </div>
+
       <div class="form-error" id="share-err" style="margin-bottom:8px"></div>
       <button class="submit-btn" id="shareSubmitBtn" onclick="submitProject()">Share Project &#x1F680;</button>
     </div>
@@ -628,6 +638,9 @@ function openShareModal() {
   document.getElementById('filePreviewCode').textContent='';
   document.getElementById('pasteLineCount').textContent='';
   loadedCode = '';
+  pendingBinary = null;
+  document.getElementById('binaryDropZone').innerHTML = '&#x1F4E6; Upload built .jar / .zip so others can download &amp; run it';
+  document.getElementById('uploadDropZone').innerHTML = '<div style="font-size:28px;margin-bottom:6px">&#x1F4C2;</div><div style="font-weight:700;color:var(--text);margin-bottom:3px">Click or drag files here</div><div style="font-size:12px;color:var(--muted)">Select multiple .kt / .java / .py files at once</div>';
   switchCodeTab('path');
   document.getElementById('shareOverlay').classList.add('open');
 }
@@ -663,6 +676,43 @@ function handleFileUpload(fileList) {
     // Update drop zone text
     document.getElementById('uploadDropZone').innerHTML = `<div style="font-size:22px;margin-bottom:4px">✅</div><div style="font-weight:700;color:var(--green)">${results.length} file${results.length===1?'':'s'} loaded</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Click to change</div>`;
   }).catch(() => { errEl.textContent = 'Could not read files.'; });
+}
+
+let pendingBinary = null; // { filename, data: base64 }
+
+function onBinarySelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const base64 = e.target.result.split(',')[1];
+    pendingBinary = { filename: file.name, data: base64 };
+    document.getElementById('binaryDropZone').innerHTML = `&#x2705; <strong>${file.name}</strong> ready to upload (${(file.size/1024/1024).toFixed(1)} MB)`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadBinaryForProject(id) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.jar,.zip,.exe,.dmg,.apk';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    showToast('Uploading…');
+    const reader = new FileReader();
+    reader.onload = async e => {
+      const base64 = e.target.result.split(',')[1];
+      const data = await api('POST', '/projects/upload-binary', { id, filename: file.name, data: base64 });
+      if (data.error) { showToast('Upload failed: ' + data.error); return; }
+      showToast('App uploaded! Reload to see the Download button.');
+      const p = allProjects.find(x => x.id === id);
+      if (p) { p.binary = id + '.' + file.name.split('.').pop(); p.binaryName = file.name; }
+      closeDetail(); openDetail(id);
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
 }
 
 function applyLoadedFile(data) {
@@ -701,6 +751,11 @@ async function submitProject() {
   try {
     const data = await api('POST', '/projects', { name, desc, lang, cat, code, icon: selectedIcon });
     if (data.error) { errEl.textContent = data.error; return; }
+    // Upload binary if one was selected
+    if (pendingBinary) {
+      await api('POST', '/projects/upload-binary', { id: data.id, filename: pendingBinary.filename, data: pendingBinary.data });
+      pendingBinary = null;
+    }
     closeShareModal();
     showToast('Project shared!');
     await showPage('mine');
@@ -727,6 +782,8 @@ async function openDetail(id) {
         ${p.code ? `<button class="run-btn" id="runBtn-${p.id}" onclick="runProject(${p.id})"><span class="play-icon">&#x25B6; Run</span><div class="spinner"></div></button>` : ''}
         <button class="action-btn ${liked?'liked':''}" id="likeBtn-${p.id}" onclick="likeProject(${p.id})">&#x2764; ${liked?'Liked':'Like'} (${p.likes})</button>
         ${p.code ? `<button class="action-btn" onclick="copyCode(${p.id})">&#x1F4CB; Copy Code</button>` : ''}
+        ${p.binary ? `<a class="action-btn" href="${API}/download/${p.id}" download="${esc(p.binaryName||'app')}">&#x2B07; Download App</a>` : ''}
+        ${isOwn && !p.binary ? `<button class="action-btn" onclick="uploadBinaryForProject(${p.id})">&#x1F4E6; Upload App</button>` : ''}
         ${isOwn  ? `<button class="action-btn danger" onclick="deleteProject(${p.id})">&#x1F5D1; Delete</button>` : ''}
         <button class="action-btn" onclick="closeDetail()">Close</button>
       </div>
